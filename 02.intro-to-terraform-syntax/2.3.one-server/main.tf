@@ -1,7 +1,7 @@
 provider "aws" {
   region = "ap-northeast-2"
 
-  # 2.x 버전의 AWS 공급자 허용
+  # 2.x 버전의 AWS 공급자허용
   version = "~> 2.0"
 }
 
