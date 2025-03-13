@@ -9,7 +9,7 @@ resource "aws_instance" "example" {
   ami                    = "ami-02d081c743d676996"
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.instance.id]
-  key_name = "taeyang(hyzzangg@naver.com)"
+  key_name = "키네임"
 
   user_data = <<-EOF
               #!/bin/bash
