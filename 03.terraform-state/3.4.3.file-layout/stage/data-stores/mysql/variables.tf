@@ -3,11 +3,10 @@
 # You must provide a value for each of these parameters.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "db_password" {
-  description = "The password for the database"
-  type        = string
-  default = "qwer1234"
-}
+# variable "db_password" {
+#   description = "The password for the database"
+#   type        = string
+# }
 
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
