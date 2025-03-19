@@ -30,6 +30,7 @@ data "template_file" "user_data" {
 # }
 
 resource "aws_autoscaling_group" "example" {
+  name = "${var.cluster_name}-${aws_launch_template.example.latest_version}"
   launch_template {
     id      = aws_launch_template.example.id
     version = "$Latest"
@@ -39,8 +40,13 @@ resource "aws_autoscaling_group" "example" {
   target_group_arns    = [aws_lb_target_group.asg.arn]
   health_check_type    = "ELB"
 
+  min_elb_capacity = var.min_size
   min_size = var.min_size
   max_size = var.max_size
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 
