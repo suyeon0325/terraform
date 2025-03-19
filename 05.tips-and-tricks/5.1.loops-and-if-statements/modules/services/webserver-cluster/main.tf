@@ -2,40 +2,32 @@ resource "aws_launch_template" "example" {
   image_id        = "ami-013218fccb68a90d4"
   instance_type   = var.instance_type
   vpc_security_group_ids = [aws_security_group.instance.id]
-  user_data = base64encode(
-  length(data.template_file.user_data[*]) > 0 
-    ? data.template_file.user_data[0].rendered 
-    : data.template_file.user_data_new[0].rendered
-  )
-
-  # 오토스케일링 그룹과 함께 시작 구성을 사용할 때 필요합니다.
-  # https://www.terraform.io/docs/providers/aws/r/launch_configuration.html
+  user_data = base64encode(data.template_file.user_data.rendered)
   lifecycle {
     create_before_destroy = true
   }
 }
 
 data "template_file" "user_data" {
-  count = var.enable_new_user_data ? 0 : 1
-
   template = file("${path.module}/user-data.sh")
 
   vars = {
     server_port = var.server_port
     db_address  = data.terraform_remote_state.db.outputs.address
     db_port     = data.terraform_remote_state.db.outputs.port
+    server_text = var.server_text
   }
 }
 
-data "template_file" "user_data_new" {
-  count = var.enable_new_user_data ? 1 : 0
+# data "template_file" "user_data_new" {
+#   count = var.enable_new_user_data ? 1 : 0
 
-  template = file("${path.module}/user-data-new.sh")
+#   template = file("${path.module}/user-data-new.sh")
 
-  vars = {
-    server_port = var.server_port
-  }
-}
+#   vars = {
+#     server_port = var.server_port
+#   }
+# }
 
 resource "aws_autoscaling_group" "example" {
   launch_template {
@@ -67,20 +59,20 @@ resource "aws_autoscaling_group" "example" {
 #     propagate_at_launch = true
 #   }
 
-  dynamic "tag" {
-    for_each = var.custom_tags
+  # dynamic "tag" {
+  #   for_each = var.custom_tags
     # for_each = {
     #   for key, value in var.custom_tags:
     #   key => upper(value)
     #   if key != "Name"
     # }
 
-    content {
-      key                 = tag.key
-      value               = tag.value
-      propagate_at_launch = true
-    }
-  }
+  #   content {
+  #     key                 = tag.key
+  #     value               = tag.value
+  #     propagate_at_launch = true
+  #   }
+  # }
 
 resource "aws_autoscaling_schedule" "scale_out_during_business_hours" {
   count = var.enable_autoscaling ? 1 : 0
@@ -115,6 +107,16 @@ resource "aws_security_group_rule" "allow_server_http_inbound" {
   from_port   = var.server_port
   to_port     = var.server_port
   protocol    = local.tcp_protocol
+  cidr_blocks = local.all_ips
+}
+
+resource "aws_security_group_rule" "allow_server_outbound" {
+  type              = "egress"
+  security_group_id = aws_security_group.instance.id
+
+  from_port   = local.any_port
+  to_port     = local.any_port
+  protocol    = local.any_protocol
   cidr_blocks = local.all_ips
 }
 
@@ -258,7 +260,7 @@ resource "aws_cloudwatch_metric_alarm" "low_cpu_credit_balance" {
 
 locals {
   http_port    = 80
-  any_port     = 0
+  any_port     = "-1"
   any_protocol = "-1"
   tcp_protocol = "tcp"
   all_ips      = ["0.0.0.0/0"]
